@@ -159,4 +159,4 @@ Dibuat oleh **Iqbal Gilang Permana, S.Kom**.
 
 Jika alat ini menghemat waktu Anda, donasi seikhlasnya sangat membantu pengembangan berikutnya. Terima kasih.
 
-> SinkronKhanza adalah proyek independen dan tidak berafiliasi dengan pengembang SIMRS Khanza.
+> > SinkronKhanza adalah proyek independen. Selamat mencoba!
