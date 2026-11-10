@@ -1,0 +1,6 @@
+# Jaga akhir baris tetap benar walau di-commit dari Windows
+* text=auto
+*.sh text eol=lf
+*.bat text eol=crlf
+*.woff2 binary
+*.png binary

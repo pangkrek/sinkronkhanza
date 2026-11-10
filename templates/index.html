@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="csrf-token" content="{{ csrf_token }}">
+  <meta name="color-scheme" content="light">
+  <title>SinkronKhanza</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%2306212a'/%3E%3Cpath d='M2 17h7l3-9 5 17 3-8h10' fill='none' stroke='%236cc8ff' stroke-width='2.4' stroke-linejoin='round' stroke-linecap='round'/%3E%3C/svg%3E">
+  <link rel="preload" href="{{ url_for('static', filename='fonts/bricolage-grotesque-latin-wght-normal.woff2') }}" as="font" type="font/woff2" crossorigin>
+  <link rel="stylesheet" href="{{ static_url('css/app.css') }}">
+  <link rel="stylesheet" href="{{ static_url('css/motion.css') }}">
+</head>
+<body>
+<a class="skip" href="#main">Lewati ke konten</a>
+
+<!-- Monitor: satu momen yang paling diingat -->
+<div class="mo-curtain" aria-hidden="true">
+  <div>
+    <svg viewBox="0 0 360 80"><path pathLength="1" d="M0 44h96l14-30 18 62 16-44 12 12h204"/><path pathLength="1" d="M0 56h130l12-16 14 30 12-20 8 6h184" opacity=".7"/></svg>
+    <b>SinkronKhanza</b>
+  </div>
+</div>
+<header class="monitor" id="monitor">
+  <canvas id="ecg" aria-hidden="true"></canvas>
+  <div class="monitor-in">
+    <div class="monitor-top">
+      <div class="brand">
+        <h1>SinkronKhanza</h1>
+        <p>Bandingkan dua database SIMRS Khanza, lihat bedanya, lalu samakan strukturnya dengan aman.</p>
+      </div>
+      <div class="top-actions">
+        <button type="button" class="btn ghost small" id="btn-save">Simpan koneksi</button>
+        <button type="button" class="btn ghost small" id="btn-load">Muat koneksi</button>
+      </div>
+    </div>
+    <div class="channels">
+      <div class="channel src" id="ch-source" data-state="off">
+        <div class="ch-meta">
+          <span class="ch-role">Source, acuan</span>
+          <strong class="ch-db" id="mon-src-db">Belum dipilih</strong>
+          <span class="ch-state" id="mon-src-state">Belum terhubung</span>
+        </div>
+        <div class="ch-trace" data-trace="source"></div>
+        <div class="ch-num"><b id="mon-src-n" data-empty>–</b><span>tabel</span></div>
+      </div>
+      <div class="channel tgt" id="ch-target" data-state="off">
+        <div class="ch-meta">
+          <span class="ch-role">Target, yang disamakan</span>
+          <strong class="ch-db" id="mon-tgt-db">Belum dipilih</strong>
+          <span class="ch-state" id="mon-tgt-state">Belum terhubung</span>
+        </div>
+        <div class="ch-trace" data-trace="target"></div>
+        <div class="ch-num"><b id="mon-tgt-n" data-empty>–</b><span>tabel</span></div>
+      </div>
+    </div>
+    <div class="vitals" id="vitals" aria-live="polite">
+      <div class="vital add" data-empty><b>–</b><span>belum ada di Target</span></div>
+      <div class="vital chg" data-empty><b>–</b><span>struktur berbeda</span></div>
+      <div class="vital ext" data-empty><b>–</b><span>hanya di Target</span></div>
+      <div class="vital same" data-empty><b>–</b><span>identik</span></div>
+    </div>
+  </div>
+</header>
+
+<nav class="steps" id="steps" aria-label="Langkah kerja">
+  <ol>
+    <li data-step="connect" data-current><a href="#s-connect"><span class="n">1</span>Hubungkan</a></li>
+    <li data-step="compare"><a href="#s-compare"><span class="n">2</span>Bandingkan</a></li>
+    <li data-step="review"><a href="#s-review"><span class="n">3</span>Tinjau hasil</a></li>
+    <li data-step="apply"><a href="#s-review" id="step-apply"><span class="n">4</span>Terapkan</a></li>
+  </ol>
+</nav>
+
+<main id="main">
+  <section class="block" id="s-connect" aria-labelledby="h-connect">
+    <div class="block-head">
+      <h2 id="h-connect">Hubungkan dua database</h2>
+      <p>Source adalah acuan yang dianggap benar, misalnya SIK hasil update. Target adalah yang akan disamakan, misalnya SIK produksi. Source hanya dibaca.</p>
+    </div>
+
+    <div class="pair">
+      <form class="conn src" data-side="source" autocomplete="off">
+        <h3>Source <small>acuan</small></h3>
+        <p class="sub">Struktur dan data acuan diambil dari sini.</p>
+        <label class="field"><span>Label (opsional, supaya tidak tertukar)</span><input type="text" name="label" placeholder="contoh: SIK baru hasil update"></label>
+        <div class="grid2">
+          <label class="field"><span>Host</span><input type="text" name="host" value="localhost" spellcheck="false"></label>
+          <label class="field"><span>Port</span><input type="text" name="port" value="3306" inputmode="numeric"></label>
+        </div>
+        <label class="field"><span>User</span><input type="text" name="user" value="root" spellcheck="false"></label>
+        <label class="field"><span>Password</span><input type="password" name="password" autocomplete="new-password"></label>
+        <label class="field"><span>Database</span>
+          <select name="database"><option value="">Uji koneksi untuk memuat daftar database</option></select>
+        </label>
+        <div class="btn-row"><button type="button" class="btn quiet" data-act="test">Uji koneksi dan muat database</button></div>
+        <div class="status" data-role="status" role="status"></div>
+      </form>
+
+      <form class="conn tgt" data-side="target" autocomplete="off">
+        <h3>Target <small>yang disamakan</small></h3>
+        <p class="sub">SQL sinkronisasi dijalankan ke sini. Backup dulu sebelum menerapkan apa pun.</p>
+        <label class="field"><span>Label (opsional, supaya tidak tertukar)</span><input type="text" name="label" placeholder="contoh: SIK lama / produksi"></label>
+        <div class="grid2">
+          <label class="field"><span>Host</span><input type="text" name="host" value="localhost" spellcheck="false"></label>
+          <label class="field"><span>Port</span><input type="text" name="port" value="3306" inputmode="numeric"></label>
+        </div>
+        <label class="field"><span>User</span><input type="text" name="user" value="root" spellcheck="false"></label>
+        <label class="field"><span>Password</span><input type="password" name="password" autocomplete="new-password"></label>
+        <label class="field"><span>Database</span>
+          <select name="database"><option value="">Uji koneksi untuk memuat daftar database</option></select>
+        </label>
+        <div class="btn-row"><button type="button" class="btn quiet" data-act="test">Uji koneksi dan muat database</button></div>
+        <div class="status" data-role="status" role="status"></div>
+
+        <div class="backup" id="backup-panel" hidden>
+          <h4>Backup database Target</h4>
+          <label class="field"><span>Database yang di-backup</span><select id="backup-db"></select></label>
+          <div class="checks">
+            <label class="check"><input type="radio" name="backup-mode" value="full" checked>Struktur dan data</label>
+            <label class="check"><input type="radio" name="backup-mode" value="structure">Struktur saja</label>
+          </div>
+          <div class="btn-row"><button type="button" class="btn" id="btn-backup">Unduh backup SQL</button></div>
+          <div class="status" id="backup-status" role="status"></div>
+        </div>
+      </form>
+    </div>
+
+    <div class="role-line" id="role-line" aria-live="polite">
+      <span class="pill" style="--c:#6cc8ff"><i></i><b id="rl-src">Source belum dipilih</b></span>
+      <span class="bridge" aria-hidden="true"></span>
+      <span class="pill" style="--c:#ffcf5a"><i></i><b id="rl-tgt">Target belum dipilih</b></span>
+      <span>Perubahan hanya ditulis ke Target.</span>
+    </div>
+  </section>
+
+  <section class="block" id="s-compare" aria-labelledby="h-compare">
+    <div class="block-head">
+      <h2 id="h-compare">Bandingkan skema</h2>
+      <p>Database Khanza yang besar (500+ tabel) bisa butuh setengah menit sampai dua menit.</p>
+    </div>
+    <div class="checks" style="margin-bottom:18px">
+      <label class="check"><input type="checkbox" id="opt-indexes" checked>Bandingkan index</label>
+      <label class="check"><input type="checkbox" id="opt-fks" checked>Bandingkan foreign key</label>
+      <label class="check"><input type="checkbox" id="opt-rowcount">Hitung jumlah baris</label>
+    </div>
+    <button type="button" class="btn launch" id="btn-compare">
+      <svg class="launch-ekg" viewBox="0 0 1200 80" preserveAspectRatio="none" aria-hidden="true"><path pathLength="1" vector-effect="non-scaling-stroke" d="M0 40 H66 Q74 28 82 40 H96 L103 47 L110 5 L118 76 L125 40 H138 Q152 22 166 40 H216 Q224 28 232 40 H246 L253 47 L260 5 L268 76 L275 40 H288 Q302 22 316 40 H366 Q374 28 382 40 H396 L403 47 L410 5 L418 76 L425 40 H438 Q452 22 466 40 H516 Q524 28 532 40 H546 L553 47 L560 5 L568 76 L575 40 H588 Q602 22 616 40 H666 Q674 28 682 40 H696 L703 47 L710 5 L718 76 L725 40 H738 Q752 22 766 40 H816 Q824 28 832 40 H846 L853 47 L860 5 L868 76 L875 40 H888 Q902 22 916 40 H966 Q974 28 982 40 H996 L1003 47 L1010 5 L1018 76 L1025 40 H1038 Q1052 22 1066 40 H1116 Q1124 28 1132 40 H1146 L1153 47 L1160 5 L1168 76 L1175 40 H1188 Q1202 22 1216 40 H1200"/></svg>
+      <span id="launch-label">Bandingkan skema</span>
+      <span class="time" id="launch-time" hidden></span>
+      <svg viewBox="0 0 96 34" aria-hidden="true"><path d="M2 18h20l6-12 8 26 7-18 5 4h46"/></svg>
+    </button>
+    <div class="status" id="compare-status" role="status" style="margin-top:12px"></div>
+  </section>
+
+  <section class="block" id="s-review" aria-labelledby="h-review" hidden>
+    <div class="block-head">
+      <h2 id="h-review">Hasil perbandingan</h2>
+      <p id="review-sub"></p>
+    </div>
+    <div class="stale" id="stale-note" role="status" hidden></div>
+    <div class="triage" id="triage" role="img" aria-label="Proporsi status tabel"></div>
+    <div class="triage-legend" id="triage-legend"></div>
+
+    <div class="toolbar">
+      <label class="field search" style="margin:0"><span>Cari nama tabel</span><input type="search" id="search" placeholder="contoh: reg_periksa" spellcheck="false"></label>
+      <div class="btn-row"><button type="button" class="btn quiet small" id="btn-export">Ekspor laporan (.txt)</button></div>
+    </div>
+    <div class="tabs" id="tabs" role="tablist" aria-label="Kelompok hasil"></div>
+    <div id="panel" class="panel" role="tabpanel" tabindex="0"></div>
+
+    <div class="cta-bar" id="cta-bar">
+      <p><b id="cta-count">0</b> statement siap ditinjau sebelum diterapkan.</p>
+      <button type="button" class="btn" id="btn-sync">Tinjau dan terapkan perubahan</button>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <p>Aplikasi ini hanya membaca skema sampai Anda menerapkan SQL secara eksplisit. Semua font dan aset dimuat dari komputer ini, tanpa internet.</p>
+  <div class="credit" id="credit">
+    <div class="credit-who">
+      <span class="credit-lbl">Dibuat oleh</span>
+      <strong>Iqbal Gilang Permana, S.Kom</strong>
+    </div>
+    <div class="credit-acts">
+      <a class="btn ghost small" id="wa-link" href="https://wa.me/6285156704337?text=Halo%20Pak%20Iqbal%2C%20saya%20pengguna%20SinkronKhanza" target="_blank" rel="noopener noreferrer">WhatsApp 0851-5670-4337</a>
+      <button type="button" class="btn small" id="btn-donasi">Donasi</button>
+    </div>
+  </div>
+</footer>
+
+<dialog class="dlg donasi" id="donasi" aria-labelledby="don-title">
+  <div class="dlg-in">
+    <h3 id="don-title">Dukung SinkronKhanza</h3>
+    <p class="don-sub">Terima kasih sudah memakai aplikasi ini. Pilih bank Anda: nomor rekening otomatis disalin, lalu aplikasi bank dibuka (di HP Android).</p>
+    <div class="don-acc"><span>Rekening Bank Jago</span><code id="don-no">103795214092</code>
+      <button type="button" class="btn ghost small" id="don-copy">Salin</button></div>
+    <div class="don-banks" id="don-banks"></div>
+    <p class="don-note">Di komputer, nomor hanya disalin; tempel di internet banking atau aplikasi bank Anda.</p>
+    <div class="dlg-acts"><button type="button" class="btn ghost small" data-close>Tutup</button></div>
+  </div>
+</dialog>
+
+<!-- Drawer penerapan -->
+<dialog class="drawer" id="drawer" aria-labelledby="dr-title">
+  <div class="drawer-in">
+    <div class="dr-head">
+      <div><h3 id="dr-title">Terapkan perubahan</h3><p id="dr-sub"></p></div>
+      <button type="button" class="btn ghost small" data-close>Tutup</button>
+    </div>
+    <div class="dr-opts">
+      <div class="btn-row" style="justify-content:space-between">
+        <div class="seg" role="radiogroup" aria-label="Arah sinkronisasi">
+          <label><input type="radio" name="sync-dir" value="source_to_target" checked>Source ke Target</label>
+          <label><input type="radio" name="sync-dir" value="target_to_source">Target ke Source</label>
+        </div>
+        <label class="check"><input type="checkbox" id="opt-safe" checked>Mode Aman (hanya CREATE dan ADD)</label>
+      </div>
+      <div class="btn-row">
+        <button type="button" class="btn quiet small" id="btn-all">Centang semua</button>
+        <button type="button" class="btn quiet small" id="btn-none">Hapus centang</button>
+        <label class="field" style="margin:0;flex:1;min-width:180px"><span class="sr">Filter nama tabel</span><input type="search" id="stmt-filter" placeholder="Filter nama tabel" spellcheck="false"></label>
+      </div>
+    </div>
+    <div class="dr-body" id="dr-body">
+      <div id="dr-hidden-note"></div>
+      <div class="stmts" id="stmts"></div>
+      <details class="fold" id="notes-fold" hidden><summary id="notes-sum"></summary><div class="fold-in" id="notes-list"></div></details>
+      <div class="sql-wrap">
+        <div class="sql-bar"><span id="sql-sum">SQL gabungan (yang tercentang)</span>
+          <span class="btn-row" style="gap:6px"><button type="button" class="btn ghost small" id="btn-copy-sql">Salin</button><button type="button" class="btn ghost small" id="btn-dl-sql">Unduh .sql</button></span></div>
+        <pre class="sql" id="sql-box"></pre>
+      </div>
+      <div id="run-area" hidden>
+        <div class="prog" id="prog"><i></i></div>
+        <p id="prog-text" class="status" style="margin-top:8px"></p>
+        <div class="log" id="run-log"></div>
+      </div>
+    </div>
+    <div class="dr-foot">
+      <span id="dr-foot-note" class="status"></span>
+      <div class="btn-row">
+        <button type="button" class="btn quiet" id="btn-cancel-run" disabled>Batalkan</button>
+        <button type="button" class="btn" id="btn-recompare" hidden>Bandingkan ulang</button>
+        <button type="button" class="btn danger" id="btn-run">Jalankan ke database</button>
+      </div>
+    </div>
+  </div>
+</dialog>
+
+<!-- Dialog konfirmasi / info -->
+<dialog class="dlg" id="dlg" aria-labelledby="dlg-title">
+  <form method="dialog" id="dlg-form">
+    <h3 id="dlg-title"></h3>
+    <p class="msg" id="dlg-msg"></p>
+    <label class="field confirm-field" id="dlg-confirm" hidden><span id="dlg-confirm-label"></span><input type="text" id="dlg-confirm-input" autocomplete="off" spellcheck="false"></label>
+    <div class="btn-row"><button type="button" class="btn quiet" id="dlg-cancel">Batal</button><button type="submit" class="btn" id="dlg-ok">OK</button></div>
+  </form>
+</dialog>
+
+<div class="toasts" id="toasts" aria-live="polite"></div>
+<script src="{{ static_url('js/app.js') }}" defer></script>
+<script src="{{ static_url('js/donasi.js') }}"></script>
+<script src="{{ static_url('js/motion.js') }}"></script>
+</body>
+</html>

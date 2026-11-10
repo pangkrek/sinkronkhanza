@@ -1,0 +1,11 @@
+.venv/
+venv/
+__pycache__/
+*.pyc
+*.sql
+backup_*
+db-sync-laporan-*.txt
+.env
+.idea/
+.vscode/
+.DS_Store
