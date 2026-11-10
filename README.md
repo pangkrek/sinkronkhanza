@@ -159,4 +159,4 @@ Dibuat oleh **Iqbal Gilang Permana, S.Kom**.
 
 Jika alat ini menghemat waktu Anda, donasi seikhlasnya sangat membantu pengembangan berikutnya. Terima kasih.
 
-> > SinkronKhanza adalah proyek independen. Selamat mencoba!
+> SinkronKhanza adalah proyek independen. Selamat mencoba!
